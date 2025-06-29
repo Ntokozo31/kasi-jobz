@@ -12,7 +12,7 @@ const jobSchema = new mongoose.Schema({
 });
 
 // Create user Model.
-const Job = mongoose.model('Job', jobSchema, 'kasi_jobz');
+const Job = mongoose.model('Job', jobSchema, 'jobs');
 
 // Export.
 module.exports = Job;
