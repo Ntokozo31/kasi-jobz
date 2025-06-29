@@ -18,16 +18,18 @@ app.use(cors());
 // Parse JSON bodies.
 app.use(express.json());
 
-// Import userRoutes
+// Import Routes
 const userRoutes = require('./routes/userRoutes');
+const jobRoutes = require('./routes/jobRoutes');
 
 // Route for testing the API. 
 app.get('/api/health', (req, res) => {
     res.status(200).json({message: 'KasiJobz API is up and running'});
 });
 
-// Use userRoutes
-app.use(userRoutes);
+// Use Routes
+app.use('/api/users', userRoutes);
+app.use('/api/jobs', jobRoutes);
 
 // Connect to database.
 mongoose.connect(process.env.MONGO_URI, {
