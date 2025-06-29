@@ -4,6 +4,8 @@ const express = require('express');
 // Import cors.
 const cors = require('cors');
 
+const mongoose = require('mongoose');
+
 // Import dotenv.
 require('dotenv').config();
 
@@ -20,6 +22,14 @@ app.use(express.json());
 app.get('/api/health', (req, res) => {
     res.status(200).json({message: 'KasiJobz API is up and running'});
 });
+
+// Connect to database.
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log("Connected to MongoDB"))
+.catch((error) => console.error("MongoDB connection error", error)) 
 
 // Start server on environment port or default to 5000.
 const PORT = process.env.PORT || 5000;
