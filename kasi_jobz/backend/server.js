@@ -1,9 +1,12 @@
+// server.js - Entry point for the kasiJobz backend API server
+
 // Import express.
 const express = require('express');
 
-// Import cors.
+// Import cors for cross-origin requests
 const cors = require('cors');
 
+// Import mongoose for MongoDB connection
 const mongoose = require('mongoose');
 
 // Import dotenv.
@@ -22,16 +25,12 @@ app.use(express.json());
 const userRoutes = require('./routes/userRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 
-// Route for testing the API. 
-app.get('/api/health', (req, res) => {
-    res.status(200).json({message: 'KasiJobz API is up and running'});
-});
 
 // Use Routes
 app.use('/api/users', userRoutes);
 app.use('/api/jobs', jobRoutes);
 
-// Connect to database.
+// Connect to MongoDB  database.
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
