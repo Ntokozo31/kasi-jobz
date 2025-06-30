@@ -38,8 +38,23 @@ const getJobById = async (req, res) => {
     }
 };
 
+// deleteJobById function - delete job by it Id
+const deleteJobById = async (req, res) => {
+    try {
+        const job = await Job.findByIdAndDelete(req.params.id);
+        if (!job) {
+            res.status(404).json({ message: "Sorry Job not found"})
+        }
+        res.status(200).json({ message: "Job Successfully deleted"})
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message})
+    }
+};
+
+
 module.exports = {
     createJob,
     getJobs,
-    getJobById
+    getJobById,
+    deleteJobById
 }
