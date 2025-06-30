@@ -7,7 +7,7 @@ const router = express.Router();
 // Import User model.
 const User = require('../models/user');
 
-// Create and save new user
+// Route to create and save a new user.
 router.post('/', async (req, res) => {
     try {
         const user = new User(req.body)
@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Get users.
+// Route to get all users, excluding password.
 router.get('/', async (req, res) => {
     try {
         const users = await User.find().select('-password');

@@ -7,7 +7,7 @@ const router = express.Router();
 // Import Job 
 const Job = require('../models/job');
 
-// Job router
+// Route to create and save a new job
 router.post('/', async (req, res) => {
     try {
         const job = new Job(req.body)
@@ -17,6 +17,16 @@ router.post('/', async (req, res) => {
         res.status(500).json({ message: "Error tying to save job", error: error.message})
     }
 });
+
+// Route to retrieve all jobs sorted by newest first
+router.get('/', async (req, res) => {
+    try {
+        const jobs = await Job.find().sort({ createdAt: -1 });
+        res.status(200).json(jobs);
+    } catch (error) {
+        res.status(500).json({ message: "Error trying to retrieve jobs", error: error.message})
+    }
+})
 
 // Export
 module.exports = router
