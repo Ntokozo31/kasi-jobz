@@ -4,7 +4,7 @@
 const express = require('express');
 
 // Import controller functions
-const { createJob, getJobs } = require('../controllers/jobControllers');
+const { createJob, getJobs, getJobById } = require('../controllers/jobControllers');
 
 // Initialize router
 const router = express.Router();
@@ -15,6 +15,9 @@ router.post('/', createJob);
 
 // Route to retrieve all jobs sorted by newest first
 router.get('/', getJobs);
+
+// Routes to retrieve job by Id.
+router.get('/:id', getJobById)
 
 // Export
 module.exports = router
