@@ -25,6 +25,7 @@ const getJobs = async (req, res) => {
     }
 };
 
+// getJoById function - retrieve a job by it Id.
 const getJobById = async (req, res) => {
     try {
         const job = await Job.findById(req.params.id)
