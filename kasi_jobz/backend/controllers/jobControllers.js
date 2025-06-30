@@ -21,11 +21,24 @@ const getJobs = async (req, res) => {
         const jobs = await Job.find().sort({ createdAt: -1 });
         res.status(200).json(jobs);
     } catch (error) {
-        res.status(500).json({ message: "Error trying to retrieve jobs", error: error.message})
+        res.status(500).json({ message: "Server error trying to retrieve jobs", error: error.message})
+    }
+};
+
+const getJobById = async (req, res) => {
+    try {
+        const job = await Job.findById(req.params.id)
+        if (!job) {
+            res.status(404).json({message: "Sorry job not found"})
+        }
+        res.status(200).json(job)
+    } catch (error) {
+        res.status(500).json({message: "Server error", error: error.message})
     }
 };
 
 module.exports = {
     createJob,
-    getJobs
+    getJobs,
+    getJobById
 }
