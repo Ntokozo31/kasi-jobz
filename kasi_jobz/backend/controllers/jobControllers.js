@@ -38,6 +38,29 @@ const getJobById = async (req, res) => {
     }
 };
 
+// updateJob function - update job by Id
+// Use $set to update only provided field
+// Return the updated document
+// Run Schema validators
+const updateJob = async (req, res) => {
+    try {
+        const job = await Job.findByIdAndUpdate(
+            req.params.id,
+            {$set: req.body},
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+        if (!job) {
+            return res.status(404).json({ message: "Job not found"})
+        }
+        res.status(200).json({ message: "Job updated successfully", "job": job})
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message})
+    }
+};
+
 // deleteJobById function - delete job by it Id
 const deleteJobById = async (req, res) => {
     try {
@@ -56,5 +79,6 @@ module.exports = {
     createJob,
     getJobs,
     getJobById,
+    updateJob,
     deleteJobById
 }
