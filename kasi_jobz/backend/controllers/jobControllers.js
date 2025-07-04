@@ -1,4 +1,4 @@
-// jobController - Handles job-related controller function
+// jobController - Handles job-related controller functions
 
 // Import job model
 const Job = require('../models/job');
@@ -30,7 +30,7 @@ const getJobById = async (req, res) => {
     try {
         const job = await Job.findById(req.params.id)
         if (!job) {
-            res.status(404).json({message: "Sorry job not found"})
+            return res.status(404).json({message: "Sorry job not found"})
         }
         res.status(200).json(job)
     } catch (error) {
@@ -66,7 +66,7 @@ const deleteJobById = async (req, res) => {
     try {
         const job = await Job.findByIdAndDelete(req.params.id);
         if (!job) {
-            res.status(404).json({ message: "Sorry Job not found"})
+            return res.status(404).json({ message: "Sorry Job not found"})
         }
         res.status(200).json({ message: "Job Successfully deleted"})
     } catch (error) {
