@@ -4,17 +4,25 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
+import JobDetailScreen from './screens/JobDetailsScreen';
+import { NavigationContainer } from '@react-navigation/native'
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+// Create a stack navigator for the app's navigation.
+const Stack = createNativeStackNavigator();
 
 // Main App component that renders the HomeScreen.
 // This is the entry point of the application.
 export default function App() {
   return (
-    <View style={styles.container}>
-      <HomeScreen />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="JobDetail" component={JobDetailScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
 // Define styles for the main container.
 // The container has a flex of 1, a white background, and padding at the top
 const styles = StyleSheet.create({
