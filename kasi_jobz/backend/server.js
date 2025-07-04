@@ -24,11 +24,13 @@ app.use(express.json());
 // Import Routes
 const userRoutes = require('./routes/userRoutes');
 const jobRoutes = require('./routes/jobRoutes');
+const applicationRoutes = require('./routes/applicationRoutes');
 
 
 // Use Routes
 app.use('/api/users', userRoutes);
 app.use('/api/jobs', jobRoutes);
+app.use('/api/applications', applicationRoutes);
 
 // Connect to MongoDB  database.
 mongoose.connect(process.env.MONGO_URI, {
