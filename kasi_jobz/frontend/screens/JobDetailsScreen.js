@@ -43,6 +43,5 @@ const JobDetailScreen = ({ route }) => {
     );
 }
 
+// Export the JobDetailScreen component as the default export.
 export default JobDetailScreen;
-
-//<Text>📍 {job.location}</Text>
