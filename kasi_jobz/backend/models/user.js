@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true}
 });
 
-// Create user Model..
+// Create User Model.
 const User = mongoose.model('User', userSchema, 'users');
 
 // Export.

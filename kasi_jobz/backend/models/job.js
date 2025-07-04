@@ -6,12 +6,13 @@ const jobSchema = new mongoose.Schema({
     title: { type: String, required: true},
     company: { type: String, required: true},
     location: { type: String, required: true},
+    province: { type: String, required: true},
     description: { type: String, required: true},
     salary: String,
     createdAt: { type: Date, default: Date.now}
 });
 
-// Create user Model.
+// Create Job Model.
 const Job = mongoose.model('Job', jobSchema, 'jobs');
 
 // Export.
