@@ -21,7 +21,7 @@ const getJobs = async (req, res) => {
         const jobs = await Job.find().sort({ createdAt: -1 });
         res.status(200).json(jobs);
     } catch (error) {
-        res.status(500).json({ message: "Server error trying to retrieve jobs", error: error.message})
+        res.status(500).json({ message: "Server error trying to retrieve jobs", error: error.message })
     }
 };
 
@@ -30,11 +30,11 @@ const getJobById = async (req, res) => {
     try {
         const job = await Job.findById(req.params.id)
         if (!job) {
-            return res.status(404).json({message: "Sorry job not found"})
+            return res.status(404).json({ message: "Sorry job not found" })
         }
         res.status(200).json(job)
     } catch (error) {
-        res.status(500).json({message: "Server error", error: error.message})
+        res.status(500).json({ message: "Server error", error: error.message })
     }
 };
 
@@ -55,9 +55,9 @@ const updateJob = async (req, res) => {
         if (!job) {
             return res.status(404).json({ message: "Job not found"})
         }
-        res.status(200).json({ message: "Job updated successfully", "job": job})
+        res.status(200).json({ message: "Job updated successfully", "job": job })
     } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message})
+        res.status(500).json({ message: "Server error", error: error.message })
     }
 };
 
@@ -66,11 +66,11 @@ const deleteJobById = async (req, res) => {
     try {
         const job = await Job.findByIdAndDelete(req.params.id);
         if (!job) {
-            return res.status(404).json({ message: "Sorry Job not found"})
+            return res.status(404).json({ message: "Sorry Job not found" })
         }
-        res.status(200).json({ message: "Job Successfully deleted"})
+        res.status(200).json({ message: "Job Successfully deleted" })
     } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message})
+        res.status(500).json({ message: "Server error", error: error.message })
     }
 };
 
