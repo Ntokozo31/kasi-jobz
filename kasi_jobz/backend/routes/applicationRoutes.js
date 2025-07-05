@@ -7,10 +7,13 @@ const express = require('express');
 const router = express.Router();
 
 // Import controller function
-const createApplication = require('../controllers/applicationController');
+const { createApplication, getApplicationsById } = require('../controllers/applicationController');
 
 // Route to create and save new application
 router.post('/', createApplication);
+
+// Route to get applications of a specific job by jobId
+router.get('/:jobId', getApplicationsById);
 
 // Export
 module.exports = router
