@@ -1,34 +1,50 @@
-// Import React from 'react';
-// Import View and StyleSheet from React Native.
-// Import HomeScreen component from the screens directory.
+// Import React and navigation components
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import HomeScreen from './screens/HomeScreen';
-import JobDetailScreen from './screens/JobDetailsScreen';
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import HomeScreen from './screens/HomeScreen';
+import JobDetailScreen from './screens/JobDetailsScreen';
+import JobPostersScreen from './screens/JobPostersScreen';
 
-// Create a stack navigator for the app's navigation.
+// Create a stack navigator for the app's navigation
 const Stack = createNativeStackNavigator();
 
-// Main App component that renders the HomeScreen.
-// This is the entry point of the application.
+// Main App component
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="JobDetail" component={JobDetailScreen} />
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#0a0e13',
+          },
+          headerTintColor: '#ffffff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            fontSize: 18,
+          },
+          contentStyle: {
+            backgroundColor: '#0a0e13',
+          },
+        }}
+      >
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen}
+          options={{ title: 'Kasi Jobs' }}
+        />
+        <Stack.Screen 
+          name="JobDetail" 
+          component={JobDetailScreen}
+          options={{ title: 'Job Details' }}
+        />
+        <Stack.Screen 
+          name="JobPoster" 
+          component={JobPostersScreen}
+          options={{ title: 'My Job Posts' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-// Define styles for the main container.
-// The container has a flex of 1, a white background, and padding at the top
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 50,
-  },
-});
+
