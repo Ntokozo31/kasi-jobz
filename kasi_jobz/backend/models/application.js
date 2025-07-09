@@ -16,6 +16,11 @@ const applicationSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    applicantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
     message: {
         type: String,
         required: true,
