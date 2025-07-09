@@ -44,97 +44,99 @@ const JobCard = ({ job }) => {
 // Styles for the JobCard component
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1b1f23',
-    paddingVertical: 8,
+    backgroundColor: '#0a0e13',
+    paddingVertical: 6,
   },
 
   // Card styles
   card: {
-    backgroundColor: '#262d34',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#1a1f29',
+    borderRadius: 16,
+    padding: 20,
     marginHorizontal: 16,
-    marginVertical: 6,
+    marginVertical: 8,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 6,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
     borderWidth: 1,
-    borderColor: '#38434f',
+    borderColor: '#2a3441',
   },
 
   // Title styles
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#ffffff',
-    marginBottom: 8,
-    lineHeight: 22,
+    marginBottom: 6,
+    lineHeight: 24,
   },
   
-  // Company and Location styles
-  companyLocationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-
-  // Company text styles
+  // Company text styles 
   company: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#b0b3b8',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#00a8ff',
+    marginBottom: 4,
   },
 
   // Location text styles
   location: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#9ca3af',
+    color: '#8d99ae',
+    marginBottom: 8,
   },
   
   // Salary text styles
   salary: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#57d9a3',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#00d4aa',
     marginBottom: 12,
-  },
-
-  // Description text styles
-  description: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#b0b3b8',
-    marginBottom: 12,
+    backgroundColor: '#0d2818',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
   },
 
   // Date text styles
   date: {
     fontSize: 12,
     fontWeight: '400',
-    color: '#9ca3af',
-    marginBottom: 12,
+    color: '#6c757d',
+    marginBottom: 16,
   },
 
   // Apply Button styles
   applyButton: {
-    backgroundColor: '#70b5f9',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    backgroundColor: '#0066cc',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
     alignSelf: 'flex-start',
+    shadowColor: '#0066cc',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
 
   // Apply Button text styles
   applyButtonText: {
     color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });
 
