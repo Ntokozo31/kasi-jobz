@@ -4,7 +4,14 @@
 const express = require('express');
 
 // Import controller functions
-const { createJob, getJobs, updateJob, getJobById, deleteJobById} = require('../controllers/jobControllers');
+const { 
+    createJob,
+    getJobs,
+    updateJob,
+    getJobById,
+    deleteJobById,
+    getJobsByPoster
+} = require('../controllers/jobControllers');
 
 // Initialize router
 const router = express.Router();
@@ -20,6 +27,9 @@ router.put('/:id', updateJob);
 
 // Route to retrieve job by Id.
 router.get('/:id', getJobById);
+
+// Routes to get jobs by poster
+router.get('/poster/:posterId', getJobsByPoster);
 
 // Route to delete job by Id
 router.delete('/:id', deleteJobById);
