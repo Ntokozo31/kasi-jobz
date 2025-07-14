@@ -2,6 +2,7 @@
 
 // Import models
 const Application = require('../models/application');
+    
 const Job = require('../models/job')
 
 // createApplication function - creates a job application.
@@ -58,7 +59,7 @@ const getApplicationsById = async (req, res) => {
     try {
         const jobId = req.params.jobId;
 
-        // Find applications by jobId
+        // Find applications by jobId.
         const applications = await Application.find({ jobId })
         if (applications.length === 0) {
             return res.status(404).json({ message: "No application found" })
