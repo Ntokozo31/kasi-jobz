@@ -4,10 +4,12 @@ import { useNavigation } from '@react-navigation/native';
 
 
 // JobCard component
-const JobCard = ({ job }) => {
+const JobCard = ({ job, userRole, currentUserId }) => {
   const formattedDate = new Date(job.createdAt).toLocaleDateString();
-
   const navigation = useNavigation();
+
+  // Check if current user is the job poster
+  const isPoster = job.posterId === currentUserId;
 
   // Return the job card layout
   return (
@@ -31,10 +33,45 @@ const JobCard = ({ job }) => {
         {/* Posted Date */}
         <Text style={styles.date}>📅 Posted: {formattedDate}</Text>
 
-        {/* Apply Button */}
-        <View style={styles.applyButton}>
-          <Text style={styles.applyButtonText}>Easily apply</Text>
-        </View>
+        {/* Job Description Preview */}
+        {job.description && (
+          <View style={styles.descriptionContainer}>
+            <Text style={styles.descriptionLabel}>📄 Description:</Text>
+            <Text style={styles.descriptionPreview}>
+              {(() => {
+                // Show longer preview for job seekers, shorter for job posters
+                const maxLength = userRole === "job_seeker" ? 150 : 100;
+                return job.description.length > maxLength 
+                  ? `${job.description.substring(0, maxLength)}...` 
+                  : job.description;
+              })()}
+            </Text>
+            {(() => {
+              const maxLength = userRole === "job_seeker" ? 150 : 100;
+              return job.description.length > maxLength && (
+                <Text style={styles.readMore}>Read more →</Text>
+              );
+            })()}
+          </View>
+        )}
+
+        {/* Conditional Button based on user role and ownership */}
+        {userRole === "job_poster" && isPoster ? (
+          // Show "View Applications" for job posters viewing their own jobs
+          <View style={styles.posterButton}>
+            <Text style={styles.posterButtonText}>👥 View Applications</Text>
+          </View>
+        ) : userRole === "job_seeker" ? (
+          // Show "Easy Apply" only for job seekers
+          <View style={styles.applyButton}>
+            <Text style={styles.applyButtonText}>Easily apply</Text>
+          </View>
+        ) : userRole === "job_poster" && !isPoster ? (
+          // Show nothing or a different message for job posters viewing other's jobs
+          <View style={styles.viewOnlyButton}>
+            <Text style={styles.viewOnlyText}>👁️ View Details</Text>
+          </View>
+        ) : null}
       </View>
       </View>
     </TouchableOpacity>
@@ -113,6 +150,34 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
+  // Description preview styles
+  descriptionContainer: {
+    marginBottom: 16,
+    backgroundColor: '#0f1419',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#00a8ff',
+  },
+  descriptionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#00a8ff',
+    marginBottom: 6,
+  },
+  descriptionPreview: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#b8c5d1',
+    marginBottom: 4,
+  },
+  readMore: {
+    fontSize: 12,
+    color: '#00a8ff',
+    fontWeight: '500',
+    fontStyle: 'italic',
+  },
+
   // Apply Button styles
   applyButton: {
     backgroundColor: '#0066cc',
@@ -135,6 +200,52 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // Poster Button styles (for job posters viewing their own jobs)
+  posterButton: {
+    backgroundColor: '#28a745',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    alignSelf: 'flex-start',
+    shadowColor: '#28a745',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+
+  // Poster Button text styles
+  posterButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // View Only Button styles (for job posters viewing other's jobs)
+  viewOnlyButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#6c757d',
+  },
+
+  // View Only Button text styles
+  viewOnlyText: {
+    color: '#6c757d',
+    fontSize: 15,
+    fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
