@@ -1,160 +1,252 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import api from '../services/api';
+import UserManager from '../utils/UserManager';
 
-// JobDetailScreen component to display job details and applications
-const JobDetailScreen = ({ route }) => {
-    const { job } = route.params;
+// JobDetailsScreen component to display job details and applications
+const JobDetailsScreen = ({ route, navigation }) => {
+  console.log('=== JobDetailsScreen LOADED ===');
+  console.log('JobDetailsScreen: route.params:', route.params);
+  console.log('JobDetailsScreen: route.params keys:', Object.keys(route.params || {}));
+  
+  if (route.params) {
+      console.log('JobDetailsScreen: onJobDeleted in params:', 'onJobDeleted' in route.params);
+      console.log('JobDetailsScreen: onJobDeleted value:', route.params.onJobDeleted);
+      console.log('JobDetailsScreen: onJobDeleted type:', typeof route.params.onJobDeleted);
+  }
+  
+  const { job, onJobDeleted } = route.params || {};
+  
+  console.log('JobDetailsScreen: After destructuring - job:', !!job);
+  console.log('JobDetailsScreen: After destructuring - onJobDeleted:', typeof onJobDeleted);
+  
+  // State to manage job applications
+  const [applications, setApplications] = useState([]);
+  const [loadingApplications, setLoadingApplications] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
-    // State to manage job applications
-    const [applications, setApplications] = useState([]);
-    const [loadingApplications, setLoadingApplications] = useState(true);
+  // Get current user info
+  const currentUserId = UserManager.getCurrentUserId();
+  const userRole = UserManager.getUserRole();
+  const isPoster = userRole === "job_poster" && job.posterId === currentUserId;
 
-    // Format the job creation date
-    const formattedDate = new Date(job.createdAt).toLocaleDateString();
+  // Format the job creation date
+  const formattedDate = new Date(job.createdAt).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
-    // Check if current user is the job poster
-    const currentUserId = "temp-mock-user-123"; 
-    const isPoster = job.posterId === currentUserId;
+  // Fetch applications for job posters
+  const fetchApplications = async () => {
+    if (!isPoster) return;
 
-    // Fetch applications for job posters only
-    useEffect(() => {
-        const fetchApplications = async () => {
-            try {
-                setLoadingApplications(true);
-                const applicationsData = await api.getApplications(job._id);
-                setApplications(applicationsData);
-            } catch (error) {
-                console.error('Failed to load applications:', error);
-            } finally {
-                setLoadingApplications(false);
-            }
-        };
-
-        // Only fetch applications if user is the poster
-        if (job && isPoster) {
-            fetchApplications();
-        } else {
-            setLoadingApplications(false);
-        }
-    }, [job._id, isPoster]);
-
-    // Handle job application submission
-    const handleApply = () => {
-        if (Platform.OS === 'web') {
-            alert(`🎉 Your application for ${job.title} has been submitted!`)
-        } else {
-            Alert.alert(
-                "🎉 Application Sent!",
-                `Your application for ${job.title} has been submitted successfully.`,
-                [{ text: "OK", style: "default" }]
-            )
-        }
+    try {
+      setLoadingApplications(true);
+      const apps = await api.getApplications(job._id);
+      setApplications(apps);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+      setApplications([]);
+    } finally {
+      setLoadingApplications(false);
     }
+  };
 
-    // Return the job detail screen layout
-    return (
-        <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.jobTitle}>{job.title}</Text>
-                <Text style={styles.company}>{job.company}</Text>
-                <View style={styles.locationRow}>
-                    <Text style={styles.location}>📍 {job.location}</Text>
-                    {job.province && <Text style={styles.province}>, {job.province}</Text>}
-                </View>
-            </View>
+  useEffect(() => {
+    fetchApplications();
+  }, [isPoster, job._id]);
 
-            // Salary section
-            <View style={styles.salaryContainer}>
-                <View style={styles.salaryBadge}>
-                    <Text style={styles.salaryText}>
-                        💰 {job.salary || 'Salary not specified'}
-                    </Text>
-                </View>
-            </View>
+  // Handle job application (for job seekers)
+  const handleApply = () => {
+    navigation.navigate('ApplyJob', { job });
+  };
 
-            // Job description and details
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>📄 Job Description</Text>
-                <Text style={styles.description}>
-                    {job.description || 'No description provided for this position.'}
-                </Text>
-            </View>
-
-            // Additional details section
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>ℹ️ Additional Details</Text>
-                <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>📅 Posted:</Text>
-                    <Text style={styles.detailValue}>{formattedDate}</Text>
-                </View>
-                {job.jobType && (
-                    <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>💼 Job Type:</Text>
-                        <Text style={styles.detailValue}>{job.jobType}</Text>
-                    </View>
-                )}
-                {job.experience && (
-                    <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>🎯 Experience:</Text>
-                        <Text style={styles.detailValue}>{job.experience}</Text>
-                    </View>
-                )}
-            </View>
-
-            // Apply section
-            {!isPoster && (
-                <View style={styles.applySection}>
-                    <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-                        <Text style={styles.applyButtonText}>🚀 APPLY NOW</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-
-            // Applications section for job posters
-            {isPoster && (
-                <View style={styles.applicationsSection}>
-                    <Text style={styles.applicationsTitle}>👥 Job Applications</Text>
-                    
-                    {loadingApplications ? (
-                        <View style={styles.centerContent}>
-                            <Text style={styles.loadingText}>🔄 Loading applications...</Text>
-                        </View>
-                    ) : applications.length > 0 ? (
-                        <View style={styles.applicationsList}>
-                            {applications.map((app) => (
-                                <View key={app._id} style={styles.applicationCard}>
-                                    <View style={styles.applicantHeader}>
-                                        <Text style={styles.applicantName}>👤 Name: {app.applicantName}</Text>
-                                        <Text style={styles.applicationDate}>
-                                            📅 {new Date(app.createdAt).toLocaleDateString()}
-                                        </Text>
-                                    </View>
-                                    
-                                    <Text style={styles.applicantEmail}>📧 Email: {app.applicantEmail}</Text>
-                                    
-                                    {app.message && (
-                                        <View style={styles.messageSection}>
-                                            <Text style={styles.messageLabel}>💬 Message:</Text>
-                                            <Text style={styles.messageText}>{app.message}</Text>
-                                        </View>
-                                    )}
-                                    
-                                    {app.phone && (
-                                        <Text style={styles.applicantPhone}>📱 Phone: {app.phone}</Text>
-                                    )}
-                                </View>
-                            ))}
-                        </View>
-                    ) : (
-                        <View style={styles.centerContent}>
-                            <Text style={styles.noApplicationsText}>📭 No applications yet.</Text>
-                        </View>
-                    )}
-                </View>
-            )}
-        </ScrollView>
+  // Handle job deletion (for job posters)
+  const handleDeleteJob = () => {
+    Alert.alert(
+      'Delete Job',
+      `Are you sure you want to delete "${job.title}"?\n\nThis action cannot be undone and will remove all applications for this job.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: deleteJob },
+      ]
     );
+  };
+
+  const deleteJob = async () => {
+    try {
+      setDeleting(true);
+      await api.deleteJob(job._id);
+      
+      Alert.alert('Success', 'Job deleted successfully!', [
+        {
+          text: 'OK',
+          onPress: () => navigation.goBack(),
+        }
+      ]);
+    } catch (error) {
+      console.error('Failed to delete job:', error);
+      Alert.alert('Error', 'Failed to delete job. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Render job description with expand/collapse
+  const renderDescription = () => {
+    const maxLength = 200;
+    const needsExpansion = job.description.length > maxLength;
+    const displayText = isDescriptionExpanded || !needsExpansion 
+      ? job.description 
+      : job.description.substring(0, maxLength) + '...';
+
+    return (
+      <View>
+        <Text style={styles.description}>{displayText}</Text>
+        {needsExpansion && (
+          <TouchableOpacity 
+            style={styles.readMoreButton}
+            onPress={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+          >
+            <Text style={styles.readMoreText}>
+              {isDescriptionExpanded ? 'Show Less' : 'Read More'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
+  // Render applications section (for job posters)
+  const renderApplications = () => {
+    if (!isPoster) return null;
+
+    return (
+      <View style={styles.applicationsSection}>
+        <Text style={styles.applicationsTitle}>👥 Job Applications</Text>
+        
+        {loadingApplications ? (
+          <View style={styles.centerContent}>
+            <Text style={styles.loadingText}>Loading applications...</Text>
+          </View>
+        ) : applications.length > 0 ? (
+          <View style={styles.applicationsList}>
+            {applications.map((app) => (
+              <View key={app._id} style={styles.applicationCard}>
+                <View style={styles.applicantHeader}>
+                  <Text style={styles.applicantName}>{app.applicantName}</Text>
+                  <Text style={styles.applicationDate}>
+                    {new Date(app.createdAt).toLocaleDateString()}
+                  </Text>
+                </View>
+                
+                <Text style={styles.applicantEmail}>📧 {app.applicantEmail}</Text>
+                
+                {app.phone && (
+                  <Text style={styles.applicantPhone}>📱 {app.phone}</Text>
+                )}
+                
+                {app.message && (
+                  <View style={styles.messageSection}>
+                    <Text style={styles.messageLabel}>💬 Message:</Text>
+                    <Text style={styles.messageText}>{app.message}</Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.centerContent}>
+            <Text style={styles.noApplicationsText}>📭 No applications yet</Text>
+            <Text style={styles.noApplicationsSubtext}>
+              Applications will appear here once job seekers apply
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // Return the job detail screen layout
+  return (
+    <ScrollView style={styles.container}>
+      {/* Job Header */}
+      <View style={styles.header}>
+        <Text style={styles.jobTitle}>{job.title}</Text>
+        <Text style={styles.company}>{job.company}</Text>
+        <View style={styles.locationRow}>
+          <Text style={styles.location}>📍 {job.location}</Text>
+          {job.province && <Text style={styles.province}>, {job.province}</Text>}
+        </View>
+      </View>
+
+      {/* Salary */}
+      <View style={styles.salaryContainer}>
+        <View style={styles.salaryBadge}>
+          <Text style={styles.salaryText}>
+            💰 {job.salary || 'Salary not specified'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Job Description */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📄 Job Description</Text>
+        {renderDescription()}
+      </View>
+
+      {/* Additional Details */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>ℹ️ Additional Details</Text>
+        
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>📅 Posted:</Text>
+          <Text style={styles.detailValue}>{formattedDate}</Text>
+        </View>
+        
+        {job.jobType && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>💼 Job Type:</Text>
+            <Text style={styles.detailValue}>{job.jobType}</Text>
+          </View>
+        )}
+        
+        {job.experience && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>🎯 Experience:</Text>
+            <Text style={styles.detailValue}>{job.experience}</Text>
+          </View>
+        )}
+
+        {/* Delete button for job posters */}
+        {isPoster && (
+          <TouchableOpacity 
+            style={[styles.deleteButton, deleting && styles.deleteButtonDisabled]}
+            onPress={handleDeleteJob}
+            disabled={deleting}
+          >
+            <Text style={styles.deleteButtonText}>
+              {deleting ? '🔄 Deleting...' : '🗑️ Delete This Job'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Apply button for job seekers */}
+      {!isPoster && (
+        <View style={styles.applySection}>
+          <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
+            <Text style={styles.applyButtonText}>APPLY NOW</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Applications section for job posters */}
+      {renderApplications()}
+    </ScrollView>
+  );
 }
 
 // Style theme for JobDetailScreen
@@ -234,6 +326,21 @@ const styles = StyleSheet.create({
         color: '#b8c5d1',
         textAlign: 'justify',
     },
+    readMoreButton: {
+        marginTop: 12,
+        alignSelf: 'flex-start',
+        backgroundColor: '#0a1929',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#00a8ff',
+    },
+    readMoreText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#00a8ff',
+    },
     detailRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -256,6 +363,25 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: 'right',
     },
+    deleteButton: {
+        backgroundColor: '#dc3545',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 16,
+        borderWidth: 1,
+        borderColor: '#ff4757',
+    },
+    deleteButtonDisabled: {
+        backgroundColor: '#6c757d',
+        borderColor: '#6c757d',
+    },
+    deleteButtonText: {
+        color: '#ffffff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
     applySection: {
         padding: 20,
         paddingBottom: 40,
@@ -267,10 +393,7 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         alignItems: 'center',
         shadowColor: '#0066cc',
-        shadowOffset: {
-            width: 0,
-            height: 6,
-        },
+        shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.4,
         shadowRadius: 8,
         elevation: 8,
@@ -383,4 +506,4 @@ const styles = StyleSheet.create({
 });
 
 // Export the JobDetailScreen component
-export default JobDetailScreen;
+export default JobDetailsScreen;
