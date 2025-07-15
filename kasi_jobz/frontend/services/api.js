@@ -54,7 +54,7 @@ const apiService = {
     } catch (error) {
       console.error('Dashboard stats endpoint not found, calculating from jobs');
       
-      // Fallback: Calculate stats from jobs
+      // Fallback: Calculate stats from jobs.
       try {
         const jobs = await this.getJobsByPoster(posterId);
         return {
@@ -74,7 +74,7 @@ const apiService = {
     }
   },
 
-  // Get job applications - Updated to match your backend
+  // Get job applications - Updated to match your backend.
   getApplications: async (jobId) => {
     try {
       const response = await api.get(`/applications/${jobId}`);
