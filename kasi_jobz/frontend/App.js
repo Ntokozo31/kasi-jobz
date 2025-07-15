@@ -1,10 +1,8 @@
-// Import React and navigation components
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native'
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from './screens/HomeScreen';
-import JobDetailScreen from './screens/JobDetailsScreen';
-import JobPostersScreen from './screens/JobPostersScreen';
+import JobDetailsScreen from './screens/JobDetailsScreen';
 
 // Create a stack navigator for the app's navigation
 const Stack = createNativeStackNavigator();
@@ -35,16 +33,10 @@ export default function App() {
         />
         <Stack.Screen 
           name="JobDetail" 
-          component={JobDetailScreen}
+          component={JobDetailsScreen}
           options={{ title: 'Job Details' }}
-        />
-        <Stack.Screen 
-          name="JobPoster" 
-          component={JobPostersScreen}
-          options={{ title: 'My Job Posts' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
