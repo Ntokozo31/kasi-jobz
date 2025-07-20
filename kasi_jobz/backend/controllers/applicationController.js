@@ -8,10 +8,10 @@ const Job = require('../models/job')
 // createApplication function - creates a job application.
 const createApplication = async (req, res) => {
     try {
-        const { jobId, applicantName, applicantEmail, applicantId, message } = req.body;
+        const { jobId, applicantName, applicantEmail, phone, applicantId, message } = req.body;
 
         // Validation
-        if (!jobId || !applicantName || !applicantEmail || !applicantId || !message) {
+        if (!jobId || !applicantName || !applicantEmail || !phone || !applicantId) {
         return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -41,6 +41,7 @@ const createApplication = async (req, res) => {
         applicantId,
         applicantName,
         applicantEmail: applicantEmail.trim().toLowerCase(),
+        phone: phone.trim(),
         message
         });
 
@@ -61,10 +62,8 @@ const getApplicationsById = async (req, res) => {
 
         // Find applications by jobId.
         const applications = await Application.find({ jobId })
-        if (applications.length === 0) {
-            return res.status(404).json({ message: "No application found" })
-        }
-        res.status(200).json(applications)
+        
+        res.status(200).json(applications || [])
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message })
     }
