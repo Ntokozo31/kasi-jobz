@@ -3,7 +3,7 @@ import axios from 'axios';
 // Set the base URL for the API requests
 const BASE_URL = '';
 
-// Create an axios instance with default settings
+// Create an axios instance
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
@@ -19,7 +19,9 @@ const apiService = {
       const response = await api.get('/jobs');
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
-      console.error('Error fetching all jobs:', error.response?.data || error.message);
+      if (__DEV__) {
+        console.error('Error fetching all jobs:', error.response?.data || error.message);
+      }
       return [];
     }
   },
@@ -35,12 +37,14 @@ const apiService = {
       }
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
-      console.error('Error fetching jobs by poster:', error.response?.data || error.message);
+      if (__DEV__) {
+        console.error('Error fetching jobs by poster:', error.response?.data || error.message);
+      }
       return [];
     }
   },
 
-  // Get dashboard stats - Updated to match your backend structure
+  // Get dashboard stats - (dashboard for job posters)
   getDashboardStats: async (posterId) => {
     try {
       const response = await api.get(`/jobs/dashboard/stats/${posterId}`);
@@ -52,8 +56,9 @@ const apiService = {
         recentJobs: Array.isArray(response.data?.recentJobs) ? response.data.recentJobs : []
       };
     } catch (error) {
-      console.error('Dashboard stats endpoint not found, calculating from jobs');
-      
+      if (__DEV__) {
+        console.error('Error fetching dashboard stats:', error.response?.data || error.message);
+      }
       // Fallback: Calculate stats from jobs.
       try {
         const jobs = await this.getJobsByPoster(posterId);
@@ -74,51 +79,58 @@ const apiService = {
     }
   },
 
-  // Get job applications - Updated to match your backend.
+  // Get job applications - (for job posters)
   getApplications: async (jobId) => {
     try {
       const response = await api.get(`/applications/${jobId}`);
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
-      console.error('Error fetching applications:', error.response?.data || error.message);
+      if (__DEV__) {
+        console.error('Error fetching applications:', error.response?.data || error.message);
+      }
       return [];
     }
   },
 
-  // Delete job - Updated to match your backend
+  // Delete job - (for job posters)
   deleteJob: async (jobId) => {
     try {
-      console.log('API: Starting delete request for job ID:', jobId);
       const response = await api.delete(`/jobs/${jobId}`);
-      console.log('API: Delete successful');
       return response.data;
     } catch (error) {
-      console.error('API: Delete failed:', error.response?.data || error.message);
+      if (__DEV__) {
+        console.error('API: Delete failed:', error.response?.data || error.message);
+      }
       throw error;
     }
   },
 
-  // Apply for job - Updated to match your backend
+  // Apply for job - (for job seekers)
   applyForJob: async (applicationData) => {
     try {
       const response = await api.post('/applications', applicationData);
       return response.data;
     } catch (error) {
-      console.error('Error applying for job:', error.response?.data || error.message);
+      if (__DEV__) {
+        console.error('Error applying for job:', error.response?.data || error.message);
+      }
       throw error;
     }
   },
 
-  // Get job by ID - Additional method you might need
+  // Get job by ID - (for job seekers)
   getJobById: async (jobId) => {
     try {
       const response = await api.get(`/jobs/${jobId}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching job by ID:', error.response?.data || error.message);
+      if (__DEV__) {
+        console.error('Error fetching job by ID:', error.response?.data || error.message);
+      }
       throw error;
     }
   },
 };
 
+// Export the API service
 export default apiService;
