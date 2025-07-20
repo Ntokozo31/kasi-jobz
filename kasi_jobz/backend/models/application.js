@@ -16,6 +16,10 @@ const applicationSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    phone: {
+        type: String,
+        required: true,
+    },
     applicantId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -23,7 +27,7 @@ const applicationSchema = new mongoose.Schema({
     },
     message: {
         type: String,
-        required: true,
+        required: false,
     },
     createdAt: {
         type: Date,
