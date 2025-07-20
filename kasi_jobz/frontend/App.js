@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from './screens/HomeScreen';
 import JobDetailsScreen from './screens/JobDetailsScreen';
-
+import ApplyJobScreen from './screens/ApplyJobScreen';
 // Create a stack navigator for the app's navigation
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +35,11 @@ export default function App() {
           name="JobDetail" 
           component={JobDetailsScreen}
           options={{ title: 'Job Details' }}
+        />
+        <Stack.Screen 
+          name="ApplyJob" 
+          component={ApplyJobScreen}
+          options={{ title: 'Apply for Job' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
