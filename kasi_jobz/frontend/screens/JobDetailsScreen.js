@@ -26,6 +26,10 @@ const JobDetailsScreen = ({ route, navigation }) => {
   const [deleting, setDeleting] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
+  // State to track if user has applied for the job.
+  const [hasApplied, setHasApplied] = useState(false);
+  const [checkingApplication, setCheckingApplication] = useState(false);
+
   // Get current user info
   const currentUserId = UserManager.getCurrentUserId();
   const userRole = UserManager.getUserRole();
@@ -54,13 +58,46 @@ const JobDetailsScreen = ({ route, navigation }) => {
     }
   };
 
+  // Check if current user has applied for the job
+  const checkIfUserApplied = async () => {
+    if (isPoster) return;
+
+    try {
+      setCheckingApplication(true);
+      const apps = await api.getApplications(job._id);
+
+      // Check if current user's email is in the applications
+      const userEmail = UserManager.getUserProfile().email;
+      const userApplied = apps.some(app => app.applicantEmail === userEmail);
+      setHasApplied(userApplied);
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error checking if user applied:', error);
+      }
+      setHasApplied(false);
+    } finally {
+      setCheckingApplication(false);
+    }
+  }
+
   useEffect(() => {
     fetchApplications();
+    checkIfUserApplied();
+    
+    // Listen for when user returns from ApplyJob screen
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Re-check if user applied when returning to this screen
+      checkIfUserApplied();
+    });
+
+    return unsubscribe;
   }, [isPoster, job._id]);
 
   // Handle job application (for job seekers)
   const handleApply = () => {
-    navigation.navigate('ApplyJob', { job });
+    navigation.navigate('ApplyJob', { 
+      job: job
+    });
   };
 
   // Handle job deletion (for job posters)
@@ -237,8 +274,22 @@ const JobDetailsScreen = ({ route, navigation }) => {
       {/* Apply button for job seekers */}
       {!isPoster && (
         <View style={styles.applySection}>
-          <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-            <Text style={styles.applyButtonText}>APPLY NOW</Text>
+          <TouchableOpacity 
+            style={[
+              styles.applyButton, 
+              hasApplied && styles.applyButtonDisabled
+            ]}
+            onPress={handleApply}
+            disabled={hasApplied || checkingApplication}
+          >
+            <Text style={[
+              styles.applyButtonText,
+              hasApplied && styles.applyButtonTextDisabled
+            ]}>
+              {checkingApplication ? 'CHECKING...' : 
+               hasApplied ? '✅ ALREADY APPLIED' : 
+               'APPLY NOW'}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -403,6 +454,15 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '800',
         letterSpacing: 1,
+    },
+    applyButtonDisabled: {
+        backgroundColor: '#6c757d',
+        shadowOpacity: 0,
+        elevation: 0,
+    },
+    applyButtonTextDisabled: {
+        color: '#adb5bd',
+        opacity: 0.8,
     },
     
     // Applications section styles
