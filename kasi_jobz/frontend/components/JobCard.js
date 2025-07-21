@@ -1,255 +1,300 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import api from '../services/api';
 
-
-// JobCard component
+// JobCard component to display job details and actions
 const JobCard = ({ job, userRole, currentUserId }) => {
   const formattedDate = new Date(job.createdAt).toLocaleDateString();
   const navigation = useNavigation();
-
+  
   // Check if current user is the job poster
   const isPoster = job.posterId === currentUserId;
 
-  // Return the job card layout
+  const daysAgo = Math.floor((new Date() - new Date(job.createdAt)) / (1000 * 60 * 60 * 24));
+  const timeAgo = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
+
   return (
-    <TouchableOpacity onPress={() => navigation.navigate('JobDetail', { job })}>
-      <View style={styles.container}>
+    <TouchableOpacity 
+      onPress={() => navigation.navigate('JobDetail', { job })}
+      style={styles.container}
+    >
       <View style={styles.card}>
-        {/* Job Title */}
-        <Text style={styles.title}>{job.title}</Text>
-        
-        {/* Company */} 
-        <Text style={styles.company}>{job.company}</Text>
-
-        {/* Location and Province */}
-        <Text style={styles.location}>{job.location}, {job.province}</Text>
-        
-        {/* Salary */}
-        <Text style={styles.salary}>
-          {job.salary ? `💰 ${job.salary}` : '💰 Salary not listed'}
-        </Text>
-        
-        {/* Posted Date */}
-        <Text style={styles.date}>📅 Posted: {formattedDate}</Text>
-
-        {/* Job Description Preview */}
-        {job.description && (
-          <View style={styles.descriptionContainer}>
-            <Text style={styles.descriptionLabel}>📄 Description:</Text>
-            <Text style={styles.descriptionPreview}>
-              {(() => {
-                // Show longer preview for job seekers, shorter for job posters
-                const maxLength = userRole === "job_seeker" ? 150 : 100;
-                return job.description.length > maxLength 
-                  ? `${job.description.substring(0, maxLength)}...` 
-                  : job.description;
-              })()}
-            </Text>
-            {(() => {
-              const maxLength = userRole === "job_seeker" ? 150 : 100;
-              return job.description.length > maxLength && (
-                <Text style={styles.readMore}>Read more →</Text>
-              );
-            })()}
+        {/* Header with company logo placeholder */}
+        <View style={styles.cardHeader}>
+          <View style={styles.companyLogoContainer}>
+            <View style={styles.companyLogo}>
+              <Ionicons name="business" size={20} color="#6b7280" />
+            </View>
+            <View style={styles.jobInfo}>
+              <Text style={styles.title} numberOfLines={2}>{job.title}</Text>
+              <View style={styles.companyRow}>
+                <Text style={styles.company}>{job.company}</Text>
+                <View style={styles.ratingContainer}>
+                  <Ionicons name="star" size={14} color="#fbbf24" />
+                  <Text style={styles.rating}>4.2</Text>
+                </View>
+              </View>
+            </View>
           </View>
+        </View>
+
+        {/* Job details */}
+        <View style={styles.jobDetails}>
+          <View style={styles.detailRow}>
+            <Ionicons name="location" size={16} color="#6b7280" />
+            <Text style={styles.location}>{job.location}, {job.province}</Text>
+          </View>
+          
+          {job.salary && (
+            <View style={styles.detailRow}>
+              <Ionicons name="cash" size={16} color="#6b7280" />
+              <Text style={styles.salary}>{job.salary}</Text>
+            </View>
+          )}
+          
+          <View style={styles.detailRow}>
+            <Ionicons name="time" size={16} color="#6b7280" />
+            <Text style={styles.timeAgo}>{timeAgo}</Text>
+          </View>
+        </View>
+
+        {/* Job description preview */}
+        {job.description && (
+          <Text style={styles.description} numberOfLines={2}>
+            {job.description}
+          </Text>
         )}
 
-        {/* Conditional Button based on user role and ownership */}
-        {userRole === "job_poster" && isPoster ? (
-          // Show "View Applications" for job posters viewing their own jobs
-          <View style={styles.posterButton}>
-            <Text style={styles.posterButtonText}>👥 View Applications</Text>
+        {/* Tags and badges */}
+        <View style={styles.tagsContainer}>
+          <View style={styles.jobTypeTag}>
+            <Text style={styles.jobTypeText}>Full-time</Text>
           </View>
-        ) : userRole === "job_seeker" ? (
-          // Show "Easy Apply" only for job seekers
-          <View style={styles.applyButton}>
-            <Text style={styles.applyButtonText}>Easily apply</Text>
-          </View>
-        ) : userRole === "job_poster" && !isPoster ? (
-          // Show nothing or a different message for job posters viewing other's jobs
-          <View style={styles.viewOnlyButton}>
-            <Text style={styles.viewOnlyText}>👁️ View Details</Text>
-          </View>
-        ) : null}
-      </View>
+          {daysAgo <= 3 && (
+            <View style={styles.urgentTag}>
+              <Text style={styles.urgentText}>Urgently hiring</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Action button */}
+        <View style={styles.actionContainer}>
+          {userRole === "job_poster" && isPoster ? (
+            <TouchableOpacity
+              style={styles.viewApplicationsButton}
+              onPress={() => navigation.navigate('JobDetail', { job })}
+            >
+              <Ionicons name="people" size={16} color="#059669" />
+              <Text style={styles.viewApplicationsText}>View Applications</Text>
+            </TouchableOpacity>
+          ) : userRole === "job_seeker" ? (
+            <TouchableOpacity
+              style={styles.applyButton}
+              onPress={() => navigation.navigate('ApplyJob', { job })}
+            >
+              <Text style={styles.applyButtonText}>Easy Apply</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.viewDetailsButton}>
+              <Text style={styles.viewDetailsText}>View Details</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
 };
 
-// Styles for the JobCard component
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0a0e13',
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
   },
-
-  // Card styles
   card: {
-    backgroundColor: '#1a1f29',
-    borderRadius: 16,
-    padding: 20,
-    marginHorizontal: 16,
-    marginVertical: 8,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    padding: 16,
+    marginVertical: 4,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
     borderWidth: 1,
-    borderColor: '#2a3441',
+    borderColor: '#e5e7eb',
   },
-
-  // Title styles
+  
+  // Header styles
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  companyLogoContainer: {
+    flexDirection: 'row',
+    flex: 1,
+  },
+  companyLogo: {
+    width: 48,
+    height: 48,
+    borderRadius: 6,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  jobInfo: {
+    flex: 1,
+  },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#ffffff',
-    marginBottom: 6,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2563eb',
+    marginBottom: 4,
     lineHeight: 24,
   },
-  
-  // Company text styles 
+  companyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
   company: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#00a8ff',
-    marginBottom: 4,
-  },
-
-  // Location text styles
-  location: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#8d99ae',
-    marginBottom: 8,
-  },
-  
-  // Salary text styles
-  salary: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#00d4aa',
+    fontWeight: '500',
+    color: '#111827',
+    marginRight: 12,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rating: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginLeft: 2,
+    marginRight: 4,
+  },
+  reviews: {
+    fontSize: 14,
+    color: '#9ca3af',
+  },
+  saveButton: {
+    padding: 4,
+  },
+
+  // Job details styles
+  jobDetails: {
     marginBottom: 12,
-    backgroundColor: '#0d2818',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
   },
-
-  // Date text styles
-  date: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#6c757d',
-    marginBottom: 16,
-  },
-
-  // Description preview styles
-  descriptionContainer: {
-    marginBottom: 16,
-    backgroundColor: '#0f1419',
-    padding: 12,
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#00a8ff',
-  },
-  descriptionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#00a8ff',
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 6,
   },
-  descriptionPreview: {
+  location: {
     fontSize: 14,
-    lineHeight: 20,
-    color: '#b8c5d1',
-    marginBottom: 4,
+    color: '#6b7280',
+    marginLeft: 6,
   },
-  readMore: {
-    fontSize: 12,
-    color: '#00a8ff',
+  salary: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginLeft: 6,
     fontWeight: '500',
-    fontStyle: 'italic',
+  },
+  timeAgo: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginLeft: 6,
   },
 
-  // Apply Button styles
+  // Description styles
+  description: {
+    fontSize: 14,
+    color: '#4b5563',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+
+  // Tags styles
+  tagsContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  jobTypeTag: {
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  jobTypeText: {
+    fontSize: 12,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  urgentTag: {
+    backgroundColor: '#fef2f2',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  urgentText: {
+    fontSize: 12,
+    color: '#dc2626',
+    fontWeight: '500',
+  },
+
+  // Action buttons styles
+  actionContainer: {
+    alignItems: 'flex-start',
+  },
   applyButton: {
-    backgroundColor: '#0066cc',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    alignSelf: 'flex-start',
-    shadowColor: '#0066cc',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
   },
-
-  // Apply Button text styles
   applyButtonText: {
     color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
-  // Poster Button styles (for job posters viewing their own jobs)
-  posterButton: {
-    backgroundColor: '#28a745',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    alignSelf: 'flex-start',
-    shadowColor: '#28a745',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-
-  // Poster Button text styles
-  posterButtonText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
-  // View Only Button styles (for job posters viewing other's jobs)
-  viewOnlyButton: {
-    backgroundColor: 'transparent',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: '#6c757d',
-  },
-
-  // View Only Button text styles
-  viewOnlyText: {
-    color: '#6c757d',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  },
+  viewApplicationsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0fdf4',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  viewApplicationsText: {
+    color: '#059669',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  viewDetailsButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  viewDetailsText: {
+    color: '#6b7280',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 
-// Export the JobCard component
 export default JobCard;
