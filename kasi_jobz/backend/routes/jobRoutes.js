@@ -11,7 +11,9 @@ const {
     getJobById,
     deleteJobById,
     getJobsByPoster,
-    getDashboardStats
+    getDashboardStats,
+    saveJob,
+    unsaveJob
 } = require('../controllers/jobControllers');
 
 // Initialize router
@@ -37,6 +39,12 @@ router.delete('/:id', deleteJobById);
 
 // Routes to get dashboard stats for poster.
 router.get('/dashboard/stats/:posterId', getDashboardStats);
+
+// Route to save a job
+router.post('/:jobId/save', saveJob);
+
+// Route to unsave a job
+router.post('/:jobId/unsave', unsaveJob);
 
 // Export
 module.exports = router

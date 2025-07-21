@@ -31,16 +31,48 @@ const createJob = async (req, res) => {
 
 
 // getJobs function - retrieve all jobs sorted by lasted job.
+// Now supports search and filtering
 const getJobs = async (req, res) => {
     try {
-        const jobs = await Job.find().sort({ createdAt: -1 });
+        // Step 1: Extract search parameters from query
+        const { search, province, jobType, experience } = req.query;
+        
+        // Step 2: Build search filter dynamically
+        let filter = {};
+        
+        // Add search functionality (searches title, company, description)
+        if (search) {
+            filter.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { company: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
+            ];
+        }
+        
+        // Add province filter (exact match)
+        if (province) {
+            filter.province = province;
+        }
+        
+        // Add job type filter (exact match)
+        if (jobType) {
+            filter.jobType = jobType;
+        }
+        
+        // Add experience filter (exact match)
+        if (experience) {
+            filter.experience = experience;
+        }
+        
+        // Step 3: Apply search filter
+        const jobs = await Job.find(filter).sort({ createdAt: -1 });
         res.status(200).json(jobs);
     } catch (error) {
         res.status(500).json({ message: "Server error trying to retrieve jobs", error: error.message })
     }
 };
 
-// getJobById function - retrieve a job by it Id.
+// getJobById function - retrieve a job by it Id
 const getJobById = async (req, res) => {
     try {
         const job = await Job.findById(req.params.id)
@@ -135,6 +167,54 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+// saveJob function - save a job to user's saved jobs
+const saveJob = async (req, res) => {
+    try {
+        const jobId = req.params.jobId;
+        const userId = '';
+        if (!userId) {
+            return res.status(400).json({ message: "Missing userId in request body or query." });
+        }
+        // Check if job exists
+        const job = await Job.findById(jobId);
+        if (!job) {
+            return res.status(404).json({ message: "Job not found" });
+        }
+        // Add job to user's saved jobs
+        if (!job.savedBy.includes(userId)) {
+            job.savedBy.push(userId);
+            await job.save();
+            return res.status(200).json({ message: "Job saved successfully", job });
+        } else {
+            return res.status(400).json({ message: "Job already saved" });
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+// unsave job function - remove job from user's saved jobs
+const unsaveJob = async (req, res) => {
+    try {
+        const jobId = req.params.jobId;
+        const userId = '';
+        if (!userId) {
+            return res.status(400).json({ message: "Missing userId in request body or query." });
+        }
+        // Check if job exists
+        const job = await Job.findById(jobId);
+        if (!job) {
+            return res.status(404).json({ message: "Job not found" });
+        }
+        // Remove job from user's saved jobs
+        job.savedBy = job.savedBy.filter(id => id.toString() !== userId.toString());
+        await job.save();
+        res.status(200).json({ message: "Job unsaved successfully", job });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
 // Export all functions.
 module.exports = {
     createJob,
@@ -143,5 +223,7 @@ module.exports = {
     updateJob,
     getJobsByPoster,
     deleteJobById,
-    getDashboardStats
+    getDashboardStats,
+    saveJob,
+    unsaveJob
 }

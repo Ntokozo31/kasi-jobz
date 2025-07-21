@@ -22,7 +22,8 @@ const jobSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
-    createdAt: { type: Date, default: Date.now}
+    createdAt: { type: Date, default: Date.now},
+    savedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 
 // Create Job Model.
