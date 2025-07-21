@@ -1,40 +1,60 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Alert,
+  SafeAreaView,
+  StatusBar
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import UserManager from '../utils/UserManager';
 
-// JobDetailsScreen component to display job details and applications
 const JobDetailsScreen = ({ route, navigation }) => {
-  console.log('=== JobDetailsScreen LOADED ===');
-  console.log('JobDetailsScreen: route.params:', route.params);
-  console.log('JobDetailsScreen: route.params keys:', Object.keys(route.params || {}));
-  
-  if (route.params) {
-      console.log('JobDetailsScreen: onJobDeleted in params:', 'onJobDeleted' in route.params);
-      console.log('JobDetailsScreen: onJobDeleted value:', route.params.onJobDeleted);
-      console.log('JobDetailsScreen: onJobDeleted type:', typeof route.params.onJobDeleted);
-  }
-  
   const { job, onJobDeleted } = route.params || {};
   
-  console.log('JobDetailsScreen: After destructuring - job:', !!job);
-  console.log('JobDetailsScreen: After destructuring - onJobDeleted:', typeof onJobDeleted);
-  
-  // State to manage job applications
   const [applications, setApplications] = useState([]);
   const [loadingApplications, setLoadingApplications] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-
-  // State to track if user has applied for the job.
   const [hasApplied, setHasApplied] = useState(false);
   const [checkingApplication, setCheckingApplication] = useState(false);
-
+  
   // Get current user info
   const currentUserId = UserManager.getCurrentUserId();
   const userRole = UserManager.getUserRole();
   const isPoster = userRole === "job_poster" && job.posterId === currentUserId;
 
+  // Save/Unsave job state
+  const [isSaved, setIsSaved] = useState(job.savedBy && currentUserId ? job.savedBy.includes(currentUserId) : false);
+  const [saving, setSaving] = useState(false);
+
+  const handleToggleSave = async () => {
+    if (!currentUserId) {
+      Alert.alert('Please log in to save jobs.');
+      return;
+    }
+    setSaving(true);
+    try {
+      if (isSaved) {
+        await api.unsaveJob(job._id, currentUserId);
+        setIsSaved(false);
+        Alert.alert('Success', 'Successfully unsaved the job!');
+      } else {
+        await api.saveJob(job._id, currentUserId);
+        setIsSaved(true);
+        Alert.alert('Success', 'Successfully saved the job!');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not update saved jobs.');
+    } finally {
+      setSaving(false);
+    }
+  };
+  
   // Format the job creation date
   const formattedDate = new Date(job.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -42,10 +62,13 @@ const JobDetailsScreen = ({ route, navigation }) => {
     day: 'numeric',
   });
 
+  // Calculate days ago
+  const daysAgo = Math.floor((new Date() - new Date(job.createdAt)) / (1000 * 60 * 60 * 24));
+  const timeAgo = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
+
   // Fetch applications for job posters
   const fetchApplications = async () => {
     if (!isPoster) return;
-
     try {
       setLoadingApplications(true);
       const apps = await api.getApplications(job._id);
@@ -61,19 +84,14 @@ const JobDetailsScreen = ({ route, navigation }) => {
   // Check if current user has applied for the job
   const checkIfUserApplied = async () => {
     if (isPoster) return;
-
     try {
       setCheckingApplication(true);
       const apps = await api.getApplications(job._id);
-
-      // Check if current user's email is in the applications
       const userEmail = UserManager.getUserProfile().email;
       const userApplied = apps.some(app => app.applicantEmail === userEmail);
       setHasApplied(userApplied);
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error checking if user applied:', error);
-      }
+      console.error('Error checking if user applied:', error);
       setHasApplied(false);
     } finally {
       setCheckingApplication(false);
@@ -84,23 +102,18 @@ const JobDetailsScreen = ({ route, navigation }) => {
     fetchApplications();
     checkIfUserApplied();
     
-    // Listen for when user returns from ApplyJob screen
     const unsubscribe = navigation.addListener('focus', () => {
-      // Re-check if user applied when returning to this screen
       checkIfUserApplied();
     });
-
     return unsubscribe;
   }, [isPoster, job._id]);
 
-  // Handle job application (for job seekers)
+  // Handle job application
   const handleApply = () => {
-    navigation.navigate('ApplyJob', { 
-      job: job
-    });
+    navigation.navigate('ApplyJob', { job: job });
   };
 
-  // Handle job deletion (for job posters)
+  // Handle job deletion
   const handleDeleteJob = () => {
     Alert.alert(
       'Delete Job',
@@ -131,38 +144,13 @@ const JobDetailsScreen = ({ route, navigation }) => {
     }
   };
 
-  // Render job description with expand/collapse
-  const renderDescription = () => {
-    const maxLength = 200;
-    const needsExpansion = job.description.length > maxLength;
-    const displayText = isDescriptionExpanded || !needsExpansion 
-      ? job.description 
-      : job.description.substring(0, maxLength) + '...';
-
-    return (
-      <View>
-        <Text style={styles.description}>{displayText}</Text>
-        {needsExpansion && (
-          <TouchableOpacity 
-            style={styles.readMoreButton}
-            onPress={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-          >
-            <Text style={styles.readMoreText}>
-              {isDescriptionExpanded ? 'Show Less' : 'Read More'}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
-
-  // Render applications section (for job posters)
+  // Render applications section
   const renderApplications = () => {
     if (!isPoster) return null;
 
     return (
-      <View style={styles.applicationsSection}>
-        <Text style={styles.applicationsTitle}>👥 Job Applications</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Applications ({applications.length})</Text>
         
         {loadingApplications ? (
           <View style={styles.centerContent}>
@@ -173,21 +161,24 @@ const JobDetailsScreen = ({ route, navigation }) => {
             {applications.map((app) => (
               <View key={app._id} style={styles.applicationCard}>
                 <View style={styles.applicantHeader}>
-                  <Text style={styles.applicantName}>{app.applicantName}</Text>
+                  <View style={styles.applicantAvatar}>
+                    <Ionicons name="person" size={20} color="#6b7280" />
+                  </View>
+                  <View style={styles.applicantInfo}>
+                    <Text style={styles.applicantName}>{app.applicantName}</Text>
+                    <Text style={styles.applicantEmail}>{app.applicantEmail}</Text>
+                    {app.phone && (
+                      <Text style={styles.applicantPhone}>{app.phone}</Text>
+                    )}
+                  </View>
                   <Text style={styles.applicationDate}>
                     {new Date(app.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
                 
-                <Text style={styles.applicantEmail}>📧 {app.applicantEmail}</Text>
-                
-                {app.phone && (
-                  <Text style={styles.applicantPhone}>📱 {app.phone}</Text>
-                )}
-                
                 {app.message && (
                   <View style={styles.messageSection}>
-                    <Text style={styles.messageLabel}>💬 Message:</Text>
+                    <Text style={styles.messageLabel}>Cover Letter:</Text>
                     <Text style={styles.messageText}>{app.message}</Text>
                   </View>
                 )}
@@ -196,7 +187,8 @@ const JobDetailsScreen = ({ route, navigation }) => {
           </View>
         ) : (
           <View style={styles.centerContent}>
-            <Text style={styles.noApplicationsText}>📭 No applications yet</Text>
+            <Ionicons name="mail-outline" size={48} color="#d1d5db" />
+            <Text style={styles.noApplicationsText}>No applications yet</Text>
             <Text style={styles.noApplicationsSubtext}>
               Applications will appear here once job seekers apply
             </Text>
@@ -206,70 +198,127 @@ const JobDetailsScreen = ({ route, navigation }) => {
     );
   };
 
-  // Return the job detail screen layout
   return (
-    <ScrollView style={styles.container}>
-      {/* Job Header */}
-      <View style={styles.header}>
-        <Text style={styles.jobTitle}>{job.title}</Text>
-        <Text style={styles.company}>{job.company}</Text>
-        <View style={styles.locationRow}>
-          <Text style={styles.location}>📍 {job.location}</Text>
-          {job.province && <Text style={styles.province}>, {job.province}</Text>}
-        </View>
-      </View>
-
-      {/* Salary */}
-      <View style={styles.salaryContainer}>
-        <View style={styles.salaryBadge}>
-          <Text style={styles.salaryText}>
-            💰 {job.salary || 'Salary not specified'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Job Description */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📄 Job Description</Text>
-        {renderDescription()}
-      </View>
-
-      {/* Additional Details */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ℹ️ Additional Details</Text>
-        
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>📅 Posted:</Text>
-          <Text style={styles.detailValue}>{formattedDate}</Text>
-        </View>
-        
-        {job.jobType && (
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>💼 Job Type:</Text>
-            <Text style={styles.detailValue}>{job.jobType}</Text>
-          </View>
-        )}
-        
-        {job.experience && (
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>🎯 Experience:</Text>
-            <Text style={styles.detailValue}>{job.experience}</Text>
-          </View>
-        )}
-
-        {/* Delete button for job posters */}
-        {isPoster && (
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      {/* Header */}
+      <SafeAreaView style={styles.header}>
+        <View style={styles.headerContent}>
           <TouchableOpacity 
-            style={[styles.deleteButton, deleting && styles.deleteButtonDisabled]}
-            onPress={handleDeleteJob}
-            disabled={deleting}
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
           >
-            <Text style={styles.deleteButtonText}>
-              {deleting ? '🔄 Deleting...' : '🗑️ Delete This Job'}
-            </Text>
+            <Ionicons name="arrow-back" size={24} color="#111827" />
           </TouchableOpacity>
+          <TouchableOpacity style={styles.shareButton}>
+            <Ionicons name="share-outline" size={24} color="#6b7280" />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+
+      <ScrollView style={styles.scrollView}>
+        {/* Job Header */}
+        <View style={styles.jobHeader}>
+          <View style={styles.companyLogoContainer}>
+            <View style={styles.companyLogo}>
+              <Ionicons name="business" size={32} color="#6b7280" />
+            </View>
+            <View style={styles.jobHeaderInfo}>
+              <Text style={styles.jobTitle}>{job.title}</Text>
+              <View style={styles.companyRow}>
+                <Text style={styles.company}>{job.company}</Text>
+                <View style={styles.ratingContainer}>
+                  <Ionicons name="star" size={16} color="#fbbf24" />
+                  <Text style={styles.rating}>4.2</Text>
+                  <Text style={styles.reviews}>(127 reviews)</Text>
+                </View>
+              </View>
+              <View style={styles.locationRow}>
+                <Ionicons name="location" size={16} color="#6b7280" />
+                <Text style={styles.location}>{job.location}, {job.province}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Job Details */}
+        <View style={styles.jobDetails}>
+          <View style={styles.detailsRow}>
+            <View style={styles.detailItem}>
+              <Ionicons name="cash" size={20} color="#059669" />
+              <Text style={styles.detailLabel}>Salary</Text>
+              <Text style={styles.detailValue}>{job.salary || 'Not specified'}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Ionicons name="time" size={20} color="#2563eb" />
+              <Text style={styles.detailLabel}>Posted</Text>
+              <Text style={styles.detailValue}>{timeAgo}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Ionicons name="briefcase" size={20} color="#7c3aed" />
+              <Text style={styles.detailLabel}>Type</Text>
+              <Text style={styles.detailValue}>{job.jobType || 'Full-time'}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Job Description */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Job Description</Text>
+          <Text style={styles.description}>
+            {isDescriptionExpanded || job.description.length <= 300 
+              ? job.description 
+              : job.description.substring(0, 300) + '...'
+            }
+          </Text>
+          {job.description.length > 300 && (
+            <TouchableOpacity 
+              style={styles.readMoreButton}
+              onPress={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+            >
+              <Text style={styles.readMoreText}>
+                {isDescriptionExpanded ? 'Show Less' : 'Read More'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Additional Details */}
+        {(job.experience || isPoster) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Additional Details</Text>
+            
+            {job.experience && (
+              <View style={styles.additionalDetailRow}>
+                <Text style={styles.additionalDetailLabel}>Experience Required:</Text>
+                <Text style={styles.additionalDetailValue}>{job.experience}</Text>
+              </View>
+            )}
+            
+            <View style={styles.additionalDetailRow}>
+              <Text style={styles.additionalDetailLabel}>Posted Date:</Text>
+              <Text style={styles.additionalDetailValue}>{formattedDate}</Text>
+            </View>
+
+            {/* Delete button for job posters */}
+            {isPoster && (
+              <TouchableOpacity 
+                style={[styles.deleteButton, deleting && styles.deleteButtonDisabled]}
+                onPress={handleDeleteJob}
+                disabled={deleting}
+              >
+                <Ionicons name="trash" size={16} color="#ffffff" />
+                <Text style={styles.deleteButtonText}>
+                  {deleting ? 'Deleting...' : 'Delete This Job'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
-      </View>
+
+        {/* Applications section for job posters */}
+        {renderApplications()}
+      </ScrollView>
 
       {/* Apply button for job seekers */}
       {!isPoster && (
@@ -286,284 +335,357 @@ const JobDetailsScreen = ({ route, navigation }) => {
               styles.applyButtonText,
               hasApplied && styles.applyButtonTextDisabled
             ]}>
-              {checkingApplication ? 'CHECKING...' : 
-               hasApplied ? '✅ ALREADY APPLIED' : 
-               'APPLY NOW'}
+              {checkingApplication ? 'Checking...' :
+                hasApplied ? 'Already Applied' :
+                'Apply Now'}
             </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.saveJobButton}
+            onPress={handleToggleSave}
+            disabled={saving}
+          >
+            <Ionicons 
+              name={isSaved ? 'bookmark' : 'bookmark-outline'} 
+              size={20} 
+              color={isSaved ? '#2563eb' : '#6b7280'} 
+            />
+            <Text style={styles.saveJobText}>{isSaved ? 'Saved' : 'Save Job'}</Text>
           </TouchableOpacity>
         </View>
       )}
-
-      {/* Applications section for job posters */}
-      {renderApplications()}
-    </ScrollView>
+    </View>
   );
-}
+};
 
-// Style theme for JobDetailScreen
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#0a0e13',
-    },
-    header: {
-        backgroundColor: '#1a1f29',
-        padding: 24,
-        borderBottomWidth: 1,
-        borderBottomColor: '#2a3441',
-    },
-    jobTitle: {
-        fontSize: 28,
-        fontWeight: '800',
-        color: '#ffffff',
-        marginBottom: 8,
-        lineHeight: 34,
-    },
-    company: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: '#00a8ff',
-        marginBottom: 12,
-    },
-    locationRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    location: {
-        fontSize: 16,
-        color: '#8d99ae',
-        fontWeight: '500',
-    },
-    province: {
-        fontSize: 16,
-        color: '#8d99ae',
-        fontWeight: '500',
-    },
-    salaryContainer: {
-        padding: 20,
-        alignItems: 'center',
-    },
-    salaryBadge: {
-        backgroundColor: '#0d2818',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 25,
-        borderWidth: 1,
-        borderColor: '#00d4aa',
-    },
-    salaryText: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#00d4aa',
-        textAlign: 'center',
-    },
-    section: {
-        margin: 20,
-        backgroundColor: '#1a1f29',
-        borderRadius: 16,
-        padding: 20,
-        borderWidth: 1,
-        borderColor: '#2a3441',
-    },
-    sectionTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#ffffff',
-        marginBottom: 16,
-    },
-    description: {
-        fontSize: 16,
-        lineHeight: 24,
-        color: '#b8c5d1',
-        textAlign: 'justify',
-    },
-    readMoreButton: {
-        marginTop: 12,
-        alignSelf: 'flex-start',
-        backgroundColor: '#0a1929',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#00a8ff',
-    },
-    readMoreText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#00a8ff',
-    },
-    detailRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#2a3441',
-    },
-    detailLabel: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#8d99ae',
-        flex: 1,
-    },
-    detailValue: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#ffffff',
-        flex: 1,
-        textAlign: 'right',
-    },
-    deleteButton: {
-        backgroundColor: '#dc3545',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginTop: 16,
-        borderWidth: 1,
-        borderColor: '#ff4757',
-    },
-    deleteButtonDisabled: {
-        backgroundColor: '#6c757d',
-        borderColor: '#6c757d',
-    },
-    deleteButtonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    applySection: {
-        padding: 20,
-        paddingBottom: 40,
-    },
-    applyButton: {
-        backgroundColor: '#0066cc',
-        paddingVertical: 18,
-        paddingHorizontal: 32,
-        borderRadius: 30,
-        alignItems: 'center',
-        shadowColor: '#0066cc',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
-        elevation: 8,
-    },
-    applyButtonText: {
-        color: '#ffffff',
-        fontSize: 18,
-        fontWeight: '800',
-        letterSpacing: 1,
-    },
-    applyButtonDisabled: {
-        backgroundColor: '#6c757d',
-        shadowOpacity: 0,
-        elevation: 0,
-    },
-    applyButtonTextDisabled: {
-        color: '#adb5bd',
-        opacity: 0.8,
-    },
-    
-    // Applications section styles
-    applicationsSection: {
-        margin: 20,
-        backgroundColor: '#1a1f29',
-        borderRadius: 16,
-        padding: 20,
-        borderWidth: 1,
-        borderColor: '#2a3441',
-    },
-    applicationsTitle: {
-        fontSize: 22,
-        fontWeight: '700',
-        color: '#ffffff',
-        marginBottom: 20,
-        textAlign: 'center',
-    },
-    centerContent: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 20,
-    },
-    loadingText: {
-        fontSize: 16,
-        color: '#00a8ff',
-        fontWeight: '500',
-    },
-    applicationsList: {
-        marginTop: 10,
-    },
-    applicationCard: {
-        backgroundColor: '#262d34',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: '#38434f',
-    },
-    applicantHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    applicantName: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#ffffff',
-        flex: 1,
-    },
-    applicationDate: {
-        fontSize: 12,
-        color: '#8d99ae',
-        fontWeight: '400',
-    },
-    applicantEmail: {
-        fontSize: 14,
-        color: '#00a8ff',
-        marginBottom: 8,
-        fontWeight: '500',
-    },
-    applicantPhone: {
-        fontSize: 14,
-        color: '#8d99ae',
-        marginTop: 8,
-        fontWeight: '500',
-    },
-    messageSection: {
-        marginTop: 12,
-        padding: 12,
-        backgroundColor: '#1a1f29',
-        borderRadius: 8,
-        borderLeftWidth: 3,
-        borderLeftColor: '#00d4aa',
-    },
-    messageLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#00d4aa',
-        marginBottom: 6,
-    },
-    messageText: {
-        fontSize: 14,
-        lineHeight: 20,
-        color: '#b8c5d1',
-    },
-    noApplicationsText: {
-        fontSize: 18,
-        color: '#8d99ae',
-        textAlign: 'center',
-        marginBottom: 8,
-        fontWeight: '600',
-    },
-    noApplicationsSubtext: {
-        fontSize: 14,
-        color: '#6c757d',
-        textAlign: 'center',
-        lineHeight: 20,
-    },
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  
+  // Header styles
+  header: {
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  backButton: {
+    padding: 4,
+  },
+  shareButton: {
+    padding: 4,
+  },
+  
+  scrollView: {
+    flex: 1,
+  },
+
+  // Job header styles
+  jobHeader: {
+    backgroundColor: '#ffffff',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  companyLogoContainer: {
+    flexDirection: 'row',
+  },
+  companyLogo: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  jobHeaderInfo: {
+    flex: 1,
+  },
+  jobTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 8,
+    lineHeight: 32,
+  },
+  companyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  company: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2563eb',
+    marginRight: 12,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rating: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginLeft: 2,
+    marginRight: 4,
+  },
+  reviews: {
+    fontSize: 14,
+    color: '#9ca3af',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  location: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginLeft: 4,
+  },
+
+  // Job details styles
+  jobDetails: {
+    backgroundColor: '#ffffff',
+    padding: 20,
+    marginBottom: 8,
+  },
+  detailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  detailItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#111827',
+    marginTop: 2,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  // Section styles
+  section: {
+    backgroundColor: '#ffffff',
+    padding: 20,
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 16,
+  },
+  description: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#4b5563',
+    textAlign: 'justify',
+  },
+  readMoreButton: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  readMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2563eb',
+  },
+
+  // Additional details styles
+  additionalDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  additionalDetailLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  additionalDetailValue: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '600',
+  },
+
+  // Delete button styles
+  deleteButton: {
+    flexDirection: 'row',
+    backgroundColor: '#dc2626',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  deleteButtonDisabled: {
+    backgroundColor: '#9ca3af',
+  },
+  deleteButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+
+  // Applications styles
+  centerContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#2563eb',
+    fontWeight: '500',
+  },
+  applicationsList: {
+    marginTop: 8,
+  },
+  applicationCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  applicantHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  applicantAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#e5e7eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  applicantInfo: {
+    flex: 1,
+  },
+  applicantName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  applicantEmail: {
+    fontSize: 14,
+    color: '#2563eb',
+    marginBottom: 2,
+  },
+  applicantPhone: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  applicationDate: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  messageSection: {
+    backgroundColor: '#ffffff',
+    padding: 12,
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#2563eb',
+  },
+  messageLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2563eb',
+    marginBottom: 6,
+  },
+  messageText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#4b5563',
+  },
+  noApplicationsText: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  noApplicationsSubtext: {
+    fontSize: 14,
+    color: '#9ca3af',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  // Apply section styles
+  applySection: {
+    backgroundColor: '#ffffff',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  applyButton: {
+    backgroundColor: '#2563eb',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    flex: 1,
+    marginRight: 12,
+  },
+  applyButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  applyButtonDisabled: {
+    backgroundColor: '#9ca3af',
+  },
+  applyButtonTextDisabled: {
+    color: '#ffffff',
+  },
+  saveJobButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+  },
+  saveJobText: {
+    color: '#6b7280',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
 });
 
-// Export the JobDetailScreen component
 export default JobDetailsScreen;
