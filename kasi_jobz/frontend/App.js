@@ -1,9 +1,12 @@
 import React from 'react';
+import { View, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from './screens/HomeScreen';
 import JobDetailsScreen from './screens/JobDetailsScreen';
 import ApplyJobScreen from './screens/ApplyJobScreen';
+import SearchScreen from './screens/SearchScreen';
 // Create a stack navigator for the app's navigation
 const Stack = createNativeStackNavigator();
 
@@ -14,22 +17,27 @@ export default function App() {
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#0a0e13',
+            backgroundColor: '#fff', 
+            elevation: 0,
+            shadowOpacity: 0,
+            borderBottomWidth: 0,
+            borderBottomColor: 'transparent',
           },
-          headerTintColor: '#ffffff',
+          headerTintColor: '#111827',
           headerTitleStyle: {
             fontWeight: 'bold',
             fontSize: 18,
           },
           contentStyle: {
-            backgroundColor: '#0a0e13',
+            backgroundColor: '#fff', 
           },
+          headerShadowVisible: false,
         }}
       >
-        <Stack.Screen 
-          name="Home" 
+        <Stack.Screen
+          name="Home"
           component={HomeScreen}
-          options={{ title: 'Kasi Jobs' }}
+          options={{ headerTitle: "" }}
         />
         <Stack.Screen 
           name="JobDetail" 
@@ -40,6 +48,11 @@ export default function App() {
           name="ApplyJob" 
           component={ApplyJobScreen}
           options={{ title: 'Apply for Job' }}
+        />
+        <Stack.Screen 
+          name="SearchScreen" 
+          component={SearchScreen}
+          options={{ title: 'Search Jobs' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
